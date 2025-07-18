@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Source_Serif_4, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
 import TopNav from "@/components/top_nav";
 
 const sourceSerif = Source_Serif_4({

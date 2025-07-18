@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react"
+import { motion } from "motion/react";
 import { useState } from "react";
 
 const navItems = [

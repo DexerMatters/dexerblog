@@ -2,11 +2,6 @@
 
 import Link from "next/link";
 
-interface Document {
-  url: string;
-  author: string;
-
-}
 
 export default function SideNav() {
   return (
