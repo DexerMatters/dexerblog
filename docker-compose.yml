@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        HTTP_PROXY: ${http_proxy}
-        HTTPS_PROXY: ${https_proxy}
+        - HTTP_PROXY=http://172.17.0.1:7890
+        - HTTPS_PROXY=http://172.17.0.1:7890
     ports:
       - "3000:3000"
     depends_on:
@@ -13,13 +13,33 @@ services:
     networks:
       - app-network
 
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend-dev
+      args:
+        - HTTP_PROXY=http://172.17.0.1:7890
+        - HTTPS_PROXY=http://172.17.0.1:7890
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
       args:
-        HTTP_PROXY: ${http_proxy}
-        HTTPS_PROXY: ${https_proxy}
+        - HTTP_PROXY=http://172.17.0.1:7890
+        - HTTPS_PROXY=http://172.17.0.1:7890
     ports:
       - "3001:3001"
     depends_on:
@@ -30,6 +50,7 @@ services:
 
   db:
     image: postgres:alpine
+    restart: always
     ports:
       - "5432:5432"
     environment:

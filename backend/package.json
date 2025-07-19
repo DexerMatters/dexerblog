@@ -2,6 +2,8 @@
   "name": "dexerblog-backend",
   "version": "0.1.0",
   "scripts": {
+    "dev": "npx tsc --watch & node --watch dist/server.js",
+    "build": "npx tsc",
     "start": "npx tsc && node dist/server.js"
   },
   "dependencies": {

@@ -1,21 +1,20 @@
 # Dockerfile for the backend (Node.js)
 
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
 # 1. Base image
 FROM node:20-alpine
-
-# Set proxy arguments
-ARG HTTP_PROXY=${HTTP_PROXY}
-ARG HTTPS_PROXY=${HTTPS_PROXY}
-ENV http_proxy=${HTTP_PROXY}
-ENV https_proxy=${HTTPS_PROXY}
 
 WORKDIR /app
 
 # Copy package.json and lock file
 COPY backend/tsconfig.json backend/package.json backend/pnpm-lock.yaml* ./
 # Install pnpm and dependencies
-RUN npm install -g pnpm --verbose 
-RUN pnpm install --verbose 
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
+RUN npm install -g pnpm --verbose
+RUN pnpm install --verbose
 
 # Copy the rest of the backend application
 COPY backend/. .
@@ -24,4 +23,4 @@ COPY backend/. .
 EXPOSE 3001
 
 # Start the application
-CMD echo "$http_proxy";pnpm start --verbose
+CMD pnpm start

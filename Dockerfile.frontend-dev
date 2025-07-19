@@ -1,0 +1,24 @@
+# Dockerfile for frontend development with hot reloading
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install pnpm globally
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
+RUN npm install -g pnpm --verbose
+
+# Copy package files from frontend directory
+COPY frontend/package.json frontend/pnpm-lock.yaml* ./
+
+# Install dependencies
+RUN pnpm install --verbose
+
+# Expose Next.js development port
+EXPOSE 3000
+
+# Start Next.js in development mode
+CMD ["pnpm", "dev"]

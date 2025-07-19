@@ -1,51 +1,67 @@
 # Dockerfile for the frontend (Next.js)
+# Set proxy arguments
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
 
 # 1. Build stage
 FROM node:20-alpine AS builder
 
-# Set proxy arguments
-ARG HTTP_PROXY=${HTTP_PROXY}
-ARG HTTPS_PROXY=${HTTPS_PROXY}
-ENV HTTP_PROXY=${HTTP_PROXY}
-ENV HTTPS_PROXY=${HTTPS_PROXY}
-
-
 WORKDIR /app
 
-# Copy package.json and lock file
-COPY package.json pnpm-lock.yaml* ./
+# Install pnpm first
+RUN npm install -g pnpm --verbose
 
-# Install pnpm
-RUN npm install -g pnpm --verbose 
-# Install dependencies
-RUN pnpm install --verbose 
-# Copy the rest of the application
-COPY . .
+# Copy workspace configuration and root package files
+COPY pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml ./
+
+# Copy frontend package.json
+COPY frontend/package.json ./frontend/
+
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
+
+# Install all workspace dependencies
+RUN pnpm install --verbose
+
+# Copy the rest of the frontend application
+COPY frontend/. ./frontend/
+
+# Change to frontend directory for build
+WORKDIR /app/frontend
 
 # Build the Next.js application
 RUN pnpm build
 
 # 2. Production stage
 FROM node:20-alpine
-ENV http_proxy=${HTTP_PROXY}
-ENV https_proxy=${HTTPS_PROXY}
 
 WORKDIR /app
 
-# Copy built assets from the builder stage
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.ts ./next.config.ts
+# Install pnpm
+RUN npm install -g pnpm --verbose
+
+# Copy workspace configuration and root package files for production install
+COPY pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml ./
+COPY frontend/package.json ./frontend/
+
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
 
 # Install production dependencies
-ENV http_proxy=${HTTP_PROXY}
-ENV https_proxy=${HTTPS_PROXY}
-RUN npm install -g pnpm --verbose
 RUN pnpm install --prod --verbose
+
+# Copy built assets from the builder stage
+COPY --from=builder /app/frontend/.next ./frontend/.next
+COPY --from=builder /app/frontend/public ./frontend/public
+COPY --from=builder /app/frontend/next.config.ts ./frontend/
+
+# Change to frontend directory
+WORKDIR /app/frontend
 
 # Expose the port the app runs on
 EXPOSE 3000
 
 # Start the application
-CMD echo "$http_proxy";pnpm start --verbose
+CMD ["pnpm", "start"]

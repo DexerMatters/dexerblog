@@ -2,7 +2,7 @@ export const apps = [
   {
     name: 'frontend',
     script: 'server.js',
-    cwd: '/app',
+    cwd: '/app/frontend',
     env: {
       NODE_ENV: 'production',
       PORT: 3000,
@@ -11,7 +11,7 @@ export const apps = [
   },
   {
     name: 'backend',
-    script: 'server.js',
+    script: 'dist/server.js',
     cwd: '/app/backend',
     env: {
       NODE_ENV: 'production',
