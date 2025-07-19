@@ -11,14 +11,19 @@ ENV HTTP_PROXY=$HTTP_PROXY
 ENV HTTPS_PROXY=$HTTPS_PROXY
 RUN npm install -g pnpm --verbose
 
-# Copy package files from frontend directory
-COPY frontend/package.json frontend/pnpm-lock.yaml* ./
+# Copy workspace configuration and package files for dependency installation
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY frontend/package.json ./frontend/
 
-# Install dependencies
+# Install all workspace dependencies (including dev dependencies)
 RUN pnpm install --verbose
+
+# Change to frontend directory for development
+WORKDIR /app/frontend
 
 # Expose Next.js development port
 EXPOSE 3000
 
 # Start Next.js in development mode
+# The source code will be mounted as a volume
 CMD ["pnpm", "dev"]

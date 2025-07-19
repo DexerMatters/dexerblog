@@ -1,0 +1,28 @@
+# Dockerfile for backend development with hot reloading
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+FROM node:20-alpine
+
+# Install Git
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Install pnpm globally
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
+RUN npm install -g pnpm --verbose
+
+# Copy only package files for dependency installation
+COPY backend/package.json backend/pnpm-lock.yaml* ./
+
+# Install dependencies (including dev dependencies for development)
+RUN pnpm install --verbose
+
+# Expose the port the app runs on
+EXPOSE 3001
+
+# Start the application in development mode with hot reloading
+# The source code will be mounted as a volume
+CMD ["pnpm", "dev"]

@@ -1,18 +1,6 @@
+# Docker Compose configuration optimized for development
+# Usage: docker-compose -f docker-compose.dev.yml up
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        - HTTP_PROXY=http://172.17.0.1:7890
-        - HTTPS_PROXY=http://172.17.0.1:7890
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    networks:
-      - app-network
-
   frontend-dev:
     build:
       context: .
@@ -36,21 +24,8 @@ services:
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
-
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-      args:
-        - HTTP_PROXY=http://172.17.0.1:7890
-        - HTTPS_PROXY=http://172.17.0.1:7890
-    ports:
-      - "3001:3001"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - app-network
+    # Add restart policy for development stability
+    restart: unless-stopped
 
   backend-dev:
     build:
@@ -73,6 +48,8 @@ services:
       - app-network
     environment:
       - NODE_ENV=development
+    # Add restart policy for development stability
+    restart: unless-stopped
 
   db:
     image: postgres:alpine
@@ -93,16 +70,18 @@ services:
     networks:
       - app-network
 
-  nginx:
+  # Optional: Add a development proxy for easier testing
+  nginx-dev:
     image: nginx:alpine
     ports:
       - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - frontend
+      - frontend-dev
     networks:
       - app-network
+    restart: unless-stopped
 
 networks:
   app-network:

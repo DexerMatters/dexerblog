@@ -9,13 +9,31 @@ dexerblog/
 ├── frontend/           # Next.js frontend application
 ├── backend/           # Express.js backend application
 ├── data/              # Database data (PostgreSQL)
-├── docker-compose.yml # Docker orchestration
+├── docker-compose.yml # Production Docker orchestration
+├── docker-compose.dev.yml # Development Docker orchestration (optimized)
 └── pnpm-workspace.yaml # Workspace configuration
 ```
 
 ## Getting Started
 
-### Development
+### Quick Start (Recommended for Development)
+
+For the best development experience with hot reloading and optimized Docker setup:
+
+```bash
+# Start optimized development environment
+docker-compose -f docker-compose.dev.yml up --build
+```
+
+This will start:
+- Frontend with hot reloading on http://localhost:3000
+- Backend with hot reloading on http://localhost:3001  
+- PostgreSQL database on port 5432
+- Nginx proxy on http://localhost:80
+
+See [DOCKER_DEVELOPMENT.md](./DOCKER_DEVELOPMENT.md) for detailed Docker development setup instructions.
+
+### Local Development (Without Docker)
 
 Install dependencies for all workspaces:
 ```bash
@@ -32,11 +50,6 @@ pnpm dev
 Start the backend development server:
 ```bash
 pnpm dev:backend
-```
-
-Start both frontend and backend with Docker:
-```bash
-docker-compose up frontend-dev backend
 ```
 
 ### Production
