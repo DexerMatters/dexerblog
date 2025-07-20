@@ -1,15 +1,25 @@
 import express, { json, urlencoded } from 'express';
-import { syncGithubRepo, updateCategories } from './db.js';
+import * as db from './db.js';
+import * as render from './render.js';
 import { log } from './utils.js';
 import { error } from 'console';
 import fs from 'fs';
+import * as jwt from 'jsonwebtoken';
+import { JwksClient } from 'jwks-rsa';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3001");
 
-import ip from 'ip';
+const client = new JwksClient({
+  jwksUri: 'https://token.actions.githubusercontent.com/.well-known/jwks'
+});
 
-console.log(ip.address());
+function getKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) {
+  client.getSigningKey(header.kid, (_err, key) => {
+    const signingKey = key?.getPublicKey();
+    callback(null, signingKey);
+  });
+}
 
 // Middleware
 app.use(json());
@@ -37,21 +47,85 @@ app.get('/content/{*path}', async (req, res) => {
       log(`Error reading file at ${path}: ${err}`);
       return res.status(500).json({ error: 'Failed to read file' });
     }
-    res.json({ content: data });
+    res.send(render.renderMarkdown(data));
   });
 });
 
-app.head('/sync-repo', async (_req, res) => {
-  syncGithubRepo().catch((err) => {
-    error('Error syncing GitHub repo:', err);
-    res.status(500).json({ error: 'Failed to sync GitHub repo' });
-  }).then(() => {
-    updateCategories();
-  });
-  res.status(200).json({ message: 'Syncing GitHub repo in the background' });
+app.get('/categories', async (req, res) => {
+  const params = req.query as { title?: string, id?: string };
+  if (params.title) {
+    const category = await db.selectCategoryByTitle(params.title);
+    if (category) {
+      res.json(category);
+    } else {
+      res.status(404).json({ error: 'Category not found' });
+    }
+  } else if (params.id) {
+    const category = await db.selectCategoryById(parseInt(params.id));
+    if (category) {
+      res.json(category);
+    } else {
+      res.status(404).json({ error: 'Category not found' });
+    }
+  } else {
+    res.status(400).json({ error: 'Missing title or id parameter' });
+  }
+});
+
+app.get('/subcategories', async (req, res) => {
+  const params = req.query as { title?: string, id?: string };
+  if (params.title) {
+    const subcategory = await db.selectSubcategoriesByTitle(params.title);
+    if (subcategory) {
+      res.json(subcategory);
+    } else {
+      res.status(404).json({ error: 'Subcategory not found' });
+    }
+  } else if (params.id) {
+    const subcategory = await db.selectSubcategoriesByParentId(parseInt(params.id));
+    if (subcategory) {
+      res.json(subcategory);
+    } else {
+      res.status(404).json({ error: 'Subcategory not found' });
+    }
+  } else {
+    res.json(await db.selectTopCategories());
+  }
+});
+
+app.get('/documents', async (req, res) => {
+  const params = req.query as { title?: string, category_id?: string };
+  const documents = await db.queryDocuments(
+    params.title,
+    params.category_id ? parseInt(params.category_id) : undefined);
+  res.json(documents);
+});
+
+app.head('/sync-repo', async (req, res) => {
+  const token = req.header('authorization')?.split('Bearer ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  jwt.verify(token, getKey, {
+    issuer: 'https://token.actions.githubusercontent.com',
+    audience: 'dexerblog',
+  }, (err, decoded) => {
+    if (err)
+      return res.status(401).json({ error: 'Invalid token' });
+    log(`Token verified for user: ${decoded?.sub}`);
+    db.syncGithubRepo().catch((err) => {
+      error('Error syncing GitHub repo:', err);
+      res.status(500).json({ error: 'Failed to sync GitHub repo' });
+    }).then(() => {
+      db.updateCategories();
+    });
+    res.status(200).json({ message: 'Syncing GitHub repo in the background' });
+  })
 });
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   log(`Backend server running on port ${PORT}`);
 });
+

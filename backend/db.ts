@@ -1,4 +1,4 @@
-import postgres from "postgres";
+import { Client } from "pg";
 import util from "util";
 import { exec } from "child_process";
 import fs from "fs";
@@ -7,20 +7,17 @@ import { log } from "./utils.js";
 
 const execAsync = util.promisify(exec);
 
-const sql = postgres({
+const client = new Client({
   host: "0.0.0.0",
   port: 5432,
   database: "dexerblog",
-  username: "dexer",
+  user: "dexer",
   password: "root",
-})
+});
 
-async function selectAllCategories() {
-  const categories = await sql`SELECT * FROM categories`;
-  return categories;
-}
+await client.connect();
 
-async function syncGithubRepo(
+export async function syncGithubRepo(
   url: string = "https://github.com/DexerMatters/dexerblog-docs.git"
 ) {
   // Check if the repository folder exists
@@ -34,14 +31,7 @@ async function syncGithubRepo(
   log("Repository updated successfully.");
 }
 
-async function syncDatabase() {
-  log("Syncing database...");
-  // Add your database sync logic here
-  // This could involve running migrations or other setup tasks
-  log("Database synced successfully.");
-}
-
-async function updateCategories() {
+export async function updateCategories() {
   log("Updating categories from repository...");
   await clearDocuments();
   await clearCategories();
@@ -81,25 +71,97 @@ async function updateCategories() {
   log("Categories updated successfully.");
 }
 
-async function clearDocuments() {
-  return sql`
-    TRUNCATE TABLE documents RESTART IDENTITY CASCADE
-  `;
+export async function clearDocuments() {
+  const result = await client.query('TRUNCATE TABLE documents RESTART IDENTITY CASCADE');
+  return result.rows;
+}
+
+export async function selectTopCategories() {
+  const result = await client.query('SELECT * FROM categories WHERE parent_id IS NULL');
+  return result.rows;
+}
+
+export async function selectCategoryById(id: number) {
+  const result = await client.query('SELECT * FROM categories WHERE id = $1', [id]);
+  return result.rows[0];
+}
+
+export async function selectCategoryByTitle(title: string) {
+  const result = await client.query('SELECT * FROM categories WHERE title = $1', [title]);
+  return result.rows[0];
+}
+
+export async function selectSubcategoriesByParentId(parent_id: number | null) {
+  const result = await client.query('SELECT * FROM categories WHERE parent_id = $1', [parent_id]);
+  return result.rows;
+}
+
+export async function selectSubcategoriesByTitle(title: string) {
+  const text = `SELECT * FROM categories AS c
+    WHERE EXISTS (
+      SELECT 1 FROM categories AS p
+      WHERE p.id = c.parent_id AND p.title = $1
+    )`;
+  const result = await client.query(text, [title]);
+  return result.rows;
+}
+
+export async function selectDocumentsById(id: number) {
+  const result = await client.query('SELECT * FROM documents WHERE id = $1', [id]);
+  return result.rows[0];
+}
+
+export async function queryDocuments(title: string | undefined, category_id: number | undefined) {
+  let whereClause = '';
+  let values: (string | number)[] = [];
+  let paramIndex = 1;
+
+  if (title) {
+    whereClause += `title ILIKE $${paramIndex}`;
+    values.push(`%${title}%`);
+    paramIndex++;
+  }
+
+  if (category_id) {
+    if (whereClause) {
+      whereClause += ' AND ';
+    }
+    whereClause += `category_id = $${paramIndex}`;
+    values.push(category_id);
+    paramIndex++;
+  }
+
+  if (!whereClause) {
+    whereClause = '1=1'; // Return all documents if no filters
+  }
+
+  const text = `SELECT * FROM documents WHERE ${whereClause}`;
+  const result = await client.query(text, values);
+  return result.rows;
+}
+
+export async function selectDocumentsByCategoryId(category_id: number) {
+  const result = await client.query('SELECT * FROM documents WHERE category_id = $1', [category_id]);
+  return result.rows;
+}
+
+export async function selectDocumentsByCategoryTitle(title: string) {
+  const text = `SELECT d.* FROM documents AS d
+    JOIN categories AS c ON d.category_id = c.id
+    WHERE c.title = $1`;
+  const result = await client.query(text, [title]);
+  return result.rows;
 }
 
 async function clearCategories() {
-  return sql`
-    TRUNCATE TABLE categories RESTART IDENTITY CASCADE
-  `;
+  const result = await client.query('TRUNCATE TABLE categories RESTART IDENTITY CASCADE');
+  return result.rows;
 }
 
 async function insertCategory(parent_id: number | null, title: string, description: string): Promise<number> {
-  const result = await sql`
-    INSERT INTO categories (parent_id, title, description)
-    VALUES (${parent_id}, ${title}, ${description})
-    RETURNING id
-  `;
-  return result[0].id;
+  const text = 'INSERT INTO categories (parent_id, title, description) VALUES ($1, $2, $3) RETURNING id';
+  const result = await client.query(text, [parent_id, title, description]);
+  return result.rows[0].id;
 }
 
 async function insertDocument(
@@ -109,12 +171,9 @@ async function insertDocument(
   created_at: Date,
   modified_at: Date
 ): Promise<number> {
-  const result = await sql`
-    INSERT INTO documents (category_id, title, content_url, created_at, modified_at)
-    VALUES (${category_id}, ${title}, ${content_url}, ${created_at}, ${modified_at})
-    RETURNING id
-  `;
-  return result[0].id;
+  const text = 'INSERT INTO documents (category_id, title, content_url, created_at, modified_at) VALUES ($1, $2, $3, $4, $5) RETURNING id';
+  const result = await client.query(text, [category_id, title, content_url, created_at, modified_at]);
+  return result.rows[0].id;
 }
 
 function readAllSubdirectories(baseDir: string): string[] {
@@ -123,5 +182,3 @@ function readAllSubdirectories(baseDir: string): string[] {
     .map((name) => path.join(baseDir, name))
   return subdirs;
 }
-
-export { selectAllCategories, syncGithubRepo, syncDatabase, updateCategories };
