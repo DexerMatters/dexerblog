@@ -8,11 +8,11 @@ import { log } from "./utils.js";
 const execAsync = util.promisify(exec);
 
 const client = new Client({
-  host: "0.0.0.0",
-  port: 5432,
-  database: "dexerblog",
-  user: "dexer",
-  password: "root",
+  host: process.env.DB_HOST || "db",
+  port: parseInt(process.env.DB_PORT || "5432"),
+  database: process.env.DB_NAME || "dexerblog",
+  user: process.env.DB_USER || "dexer",
+  password: process.env.DB_PASSWORD || "root",
 });
 
 await client.connect();
@@ -62,7 +62,7 @@ export async function updateCategories() {
       await insertDocument(
         parent_id || 0,
         title || "Untitled",
-        encodeURI(dir.replace("repo", "content")),
+        encodeURIComponent(dir.replace("repo", "content")),
         new Date(stat.birthtime),
         new Date(stat.mtime)
       );
@@ -87,7 +87,7 @@ export async function selectCategoryById(id: number) {
 }
 
 export async function selectCategoryByTitle(title: string) {
-  const result = await client.query('SELECT * FROM categories WHERE title = $1', [title]);
+  const result = await client.query('SELECT * FROM categories WHERE lower(title) = lower($1)', [decodeURIComponent(title)]);
   return result.rows[0];
 }
 
@@ -100,9 +100,9 @@ export async function selectSubcategoriesByTitle(title: string) {
   const text = `SELECT * FROM categories AS c
     WHERE EXISTS (
       SELECT 1 FROM categories AS p
-      WHERE p.id = c.parent_id AND p.title = $1
+      WHERE p.id = c.parent_id AND lower(p.title) = lower($1)
     )`;
-  const result = await client.query(text, [title]);
+  const result = await client.query(text, [decodeURIComponent(title)]);
   return result.rows;
 }
 
@@ -118,7 +118,7 @@ export async function queryDocuments(title: string | undefined, category_id: num
 
   if (title) {
     whereClause += `title ILIKE $${paramIndex}`;
-    values.push(`%${title}%`);
+    values.push(`%${removeSuffix(decodeURIComponent(title), '.md')}%`);
     paramIndex++;
   }
 
@@ -148,8 +148,8 @@ export async function selectDocumentsByCategoryId(category_id: number) {
 export async function selectDocumentsByCategoryTitle(title: string) {
   const text = `SELECT d.* FROM documents AS d
     JOIN categories AS c ON d.category_id = c.id
-    WHERE c.title = $1`;
-  const result = await client.query(text, [title]);
+    WHERE lower(c.title) = lower($1)`;
+  const result = await client.query(text, [decodeURIComponent(title)]);
   return result.rows;
 }
 
@@ -160,7 +160,7 @@ async function clearCategories() {
 
 async function insertCategory(parent_id: number | null, title: string, description: string): Promise<number> {
   const text = 'INSERT INTO categories (parent_id, title, description) VALUES ($1, $2, $3) RETURNING id';
-  const result = await client.query(text, [parent_id, title, description]);
+  const result = await client.query(text, [parent_id, decodeURIComponent(title), description]);
   return result.rows[0].id;
 }
 
@@ -172,7 +172,7 @@ async function insertDocument(
   modified_at: Date
 ): Promise<number> {
   const text = 'INSERT INTO documents (category_id, title, content_url, created_at, modified_at) VALUES ($1, $2, $3, $4, $5) RETURNING id';
-  const result = await client.query(text, [category_id, title, content_url, created_at, modified_at]);
+  const result = await client.query(text, [category_id, decodeURIComponent(title), content_url, created_at, modified_at]);
   return result.rows[0].id;
 }
 
@@ -181,4 +181,11 @@ function readAllSubdirectories(baseDir: string): string[] {
     .filter((name) => !name.startsWith("."))
     .map((name) => path.join(baseDir, name))
   return subdirs;
+}
+
+function removeSuffix(str: string, suffix: string): string {
+  if (str.endsWith(suffix)) {
+    return str.slice(0, -suffix.length);
+  }
+  return str;
 }

@@ -1,30 +1,40 @@
 'use client'
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { HeaderContext } from "@/app/menu";
 
 const navItems = [
   { href: "/", label: "Home" },
-  { href: "/notes", label: "Notes" },
-  { href: "/extra", label: "Extra" },
-  { href: "/works", label: "Works" },
-  { href: "/about", label: "About" },
+  { href: "/Notes", label: "Notes" },
+  { href: "/Extra", label: "Extra" },
+  { href: "/Works", label: "Works" },
+  { href: "/About", label: "About" },
 ]
 
 export default function TopNav() {
   const router = useRouter();
+  const currentPath = usePathname().split('/').slice(0, 2).join('/');
   const style_active = "text-foreground";
   const style_inactive = "text-white hover:bg-primary-lighter transition";
   const [active, setActive] = useState(navItems[0]);
+  const setHeaderVisible = useContext(HeaderContext);
 
   const onClick = (href: string, label: string) => {
     setActive({ href, label });
     router.push(href);
+    setHeaderVisible(true);
   };
 
+  useEffect(() => {
+    navItems.filter(item => item.href === currentPath).forEach(item => {
+      setActive(item);
+    });
+  }, [currentPath]);
+
   return (
-    <ul className="flex flex-row items-center">
+    <ul className="flex flex-row items-center text-lg">
       {navItems.map(({ href, label }) => (
         <motion.li key={href} onClick={() => onClick(href, label)} className={
           `relative p-1 text-center w-64

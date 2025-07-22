@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Source_Serif_4, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
-import TopNav from "@/components/top_nav";
+import Menu from "./menu";
 
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
@@ -28,17 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${sourceSerif.className} ${notoSerif.className} antialiased`}
+        className={`${sourceSerif.className} ${notoSerif.className} antialiased overflow-hidden`}
       >
-        <div className="flex flex-col w-lvw h-lvh items-stretch">
-          {/* Header */}
-          <header className="flex flex-col items-stretch bg-primary text-white">
-            <div className="text-2xl mx-4 mt-4 mb-3">Dexer Matters's Blog</div>
-            <TopNav />
-          </header>
-          {/* Main Content */}
-          {children}
-        </div>
+        <Menu>{children}</Menu>
       </body>
     </html>
   );

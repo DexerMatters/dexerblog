@@ -51,6 +51,12 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=dexerblog
+      - DB_USER=dexer
+      - DB_PASSWORD=root
 
   backend-dev:
     build:
@@ -73,6 +79,11 @@ services:
       - app-network
     environment:
       - NODE_ENV=development
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=dexerblog
+      - DB_USER=dexer
+      - DB_PASSWORD=root
 
   db:
     image: postgres:alpine

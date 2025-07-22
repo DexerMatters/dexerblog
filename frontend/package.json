@@ -12,7 +12,8 @@
     "motion": "^12.23.6",
     "next": "15.4.1",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "sync-fetch": "0.6.0-2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -20,9 +21,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sync-fetch": "^0.4.3",
     "eslint": "^9",
     "eslint-config-next": "15.4.1",
     "mini-css-extract-plugin": "^2.9.2",
+    "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

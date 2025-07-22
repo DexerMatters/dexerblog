@@ -89,12 +89,13 @@ app.get('/subcategories', async (req, res) => {
       res.status(404).json({ error: 'Subcategory not found' });
     }
   } else {
-    res.json(await db.selectTopCategories());
+    res.status(404).json({ error: 'Missing title or id parameter' });
   }
 });
 
 app.get('/documents', async (req, res) => {
   const params = req.query as { title?: string, category_id?: string };
+  console.log(decodeURIComponent(params.title || ''));
   const documents = await db.queryDocuments(
     params.title,
     params.category_id ? parseInt(params.category_id) : undefined);
