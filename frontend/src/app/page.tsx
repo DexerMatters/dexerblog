@@ -1,6 +1,5 @@
-'use client';
-import { useEffect, useState, useCallback, ReactElement } from "react";
-import Image from "next/image";
+'use client';;
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 
 
 export default function Home() {
@@ -8,16 +7,44 @@ export default function Home() {
   const [rows, setRows] = useState(0);
   const [weight, setWeight] = useState(0);
   const [leftMargin, setLeftMargin] = useState(0);
+  const animationRef = useRef<number>(-1);
 
-  // Lower values create longer waves, higher values create shorter waves
   const waveFrequency = 0.4;
   const blockSize = 64;
 
+  const blockData = useMemo(() => {
+    const blocks: Array<{
+      rowIndex: number;
+      colIndex: number;
+      distance: number;
+      interpolatedValue: number;
+      isVisible: boolean;
+    }> = [];
+
+    for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
+      for (let colIndex = 0; colIndex < columns; colIndex++) {
+        const distance = rowIndex + colIndex * 2;
+        const isVisible = distance <= columns * 1.1;
+        const interpolatedValue = interpolate([0, 0.1, 1, 0, 0], colIndex / columns);
+
+        blocks.push({
+          rowIndex,
+          colIndex,
+          distance,
+          interpolatedValue,
+          isVisible
+        });
+      }
+    }
+    return blocks;
+  }, [rows, columns]);
+
   const animateGradient = useCallback(() => {
     setWeight((prev) => {
-      const newWeight = prev + 0.01; // Slower increment for smoother animation
+      const newWeight = prev + 0.003;
       return newWeight >= 1 ? 0 : newWeight;
     });
+    animationRef.current = requestAnimationFrame(animateGradient);
   }, []);
 
   const calculateDimensions = useCallback(() => {
@@ -39,115 +66,78 @@ export default function Home() {
   useEffect(() => {
     calculateDimensions();
 
-    // Add resize event listener
     const handleResize = () => {
       calculateDimensions();
     };
 
     window.addEventListener('resize', handleResize);
 
-
-    // Animate the gradient box with reduced frequency
-    const interval = setInterval(animateGradient, 40); // ~30fps instead of 60fps
+    animationRef.current = requestAnimationFrame(animateGradient);
 
     return () => {
-      clearInterval(interval);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
       window.removeEventListener('resize', handleResize);
     };
   }, [animateGradient, calculateDimensions]);
 
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    console.log("Dragging at:", e.clientX, e.clientY);
-  }
-
   return (
-    <main draggable
+    <main
       id="home-container"
-      onPointerMove={onPointerMove}
-      className="bg-primary relative h-full w-full overflow-hidden wrap-normal">
-      {
-        Array.from({ length: rows }).map((_, rowIndex) => (
-          <div
-            key={`relative row-${rowIndex}`}
-            style={{ width: `${columns * blockSize}px`, transform: `translateX(${leftMargin}px)` }}
-          >
-            {
-              Array.from({ length: columns }).map((_, colIndex) => {
-                const w =
-                  (sin(- weight * 2 * Math.PI + rowIndex * waveFrequency, 0.2) + 1) / 2
-                  * interpolate([0, 1, 0], colIndex / columns);
-                const text = "DEXER\nMATTERS\n`@&*#!~";
-                const lines = text.split('\n');
-                const totalLines = lines.length;
-                const startRow = Math.floor(rows / 2 - totalLines / 2);
+      className="relative bg-gradient-to-b from-primary to-accent h-full w-full overflow-hidden wrap-normal">
+      <div className="absolute float-right h-full w-full opacity-30" style={{
+        backgroundImage: 'url(/bg.png)',
+        backgroundSize: 'cover',
+      }} />
+      <div
+        className="grid absolute"
+        style={{
+          gridTemplateColumns: `repeat(${columns}, ${blockSize}px)`,
+          transform: `translateX(${leftMargin}px)`,
+          width: `${columns * blockSize}px`
+        }}
+      >
+        {blockData.map(({ rowIndex, colIndex, isVisible, interpolatedValue }) => {
+          if (!isVisible) {
+            return (
+              <div
+                key={`cell-${rowIndex}-${colIndex}`}
+                style={{
+                  width: `${blockSize}px`,
+                  height: `${blockSize}px`,
+                }}
+              />
+            );
+          }
 
-                let children: ReactElement | null = null;
+          const w = (sin(-weight * 2 * Math.PI + rowIndex * waveFrequency, 0.2) + 1) / 2 * interpolatedValue;
+          const scale = Math.max(1 - w * 0.3, 0);
 
-                // Check if current row corresponds to any text line
-                const lineIndex = rowIndex - startRow;
-                if (lineIndex >= 0 && lineIndex < totalLines) {
-                  const currentLine = lines[lineIndex];
-                  const start = Math.floor(columns / 2 - currentLine.length / 2);
-
-                  if (start >= 0 && colIndex >= start && colIndex < start + currentLine.length) {
-                    const currentChar = currentLine.at(colIndex - start) || '';
-                    switch (currentChar) {
-                      case '`':
-                        children = <Image className="bg-white p-3" src="/media_logos/github.svg" alt="Github Logo" width={blockSize} height={blockSize} />;
-                        break;
-                      case '@':
-                        children = <Image className="bg-black p-4" src="/media_logos/twitter.svg" alt="Twitter Logo" width={blockSize} height={blockSize} />;
-                        break;
-                      case '&':
-                        children = <Image className="bg-indigo-600 p-3" src="/media_logos/discord.svg" alt="Discord Logo" width={blockSize} height={blockSize} />;
-                        break;
-                      case '*':
-                        children = <Image className="bg-blue-400 p-3" src="/media_logos/telegram.svg" alt="Telegram Logo" width={blockSize} height={blockSize} />;
-                        break;
-                      case '#':
-                        children = <Image className="bg-sky-200 p-3" src="/media_logos/qq.svg" alt="QQ Logo" width={blockSize} height={blockSize} />;
-                        break;
-                      case '!':
-                        children = <Image className="bg-green-500 p-3" src="/media_logos/wechat.svg" alt="Wechat Logo" width={blockSize} height={blockSize} />;
-                        break;
-                      case '~':
-                        children = <Image className="bg-[#FEE50F] p-1" src="/media_logos/xian-yu.svg" alt="Xianyu Logo" width={blockSize} height={blockSize} />;
-                        break;
-                      default:
-                        children = <span>{currentLine.at(colIndex - start) || ''}</span>;
-                    }
-                  }
-                }
-
-                return (
-                  <div
-                    key={`cell-${rowIndex}-${colIndex}`}
-                    className={`text-primary flex float-left font-bold text-5xl items-center justify-center overflow-hidden`}
-                    style={{
-                      userSelect: 'none',
-                      width: `${blockSize}px`,
-                      height: `${blockSize}px`,
-                      backgroundColor: `var(--color-secondary)`,
-                      boxShadow: `0 0 ${ //
-                        w * 5
-                        }px var(--color-primary)`,
-                      //transform: `scale(${Math.max(1 + w * 0.2, 1)})`,
-                      //transform: `translateY(${w * 12}px)`,
-                    }}
-                  >
-                    {
-                      children
-                    }
-                  </div>
-                )
-              })}
-          </div>
-        ))
-      }
+          return (
+            <div
+              key={`cell-${rowIndex}-${colIndex}`}
+              className="bg-secondary"
+              style={{
+                width: `${blockSize}px`,
+                height: `${blockSize}px`,
+                transform: `scale(${scale})`,
+                willChange: 'transform', // Optimize for animations
+              }}
+            />
+          );
+        })}
+      </div>
+      <div className="absolute h-full w-full flex flex-col justify-center lg:pl-32 pl-4 text-white">
+        <text className="text-2xl mb-4 text-primary">Welcome to</text>
+        <header className="bg-accent overflow-hidden text-8xl w-fit">Dexer</header>
+        <header className="text-primary overflow-hidden text-8xl mt-[-30px] w-fit">Matters</header>
+        <header className="bg-primary overflow-hidden text-7xl mt-1 mb-8 pb-4 pr-2 w-fit italic">Blog</header>
+      </div>
     </main>
   );
 }
+
 
 function interpolate(controlPoints: number[], weight: number): number {
   if (controlPoints.length < 2) {

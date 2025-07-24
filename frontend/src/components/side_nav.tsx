@@ -37,7 +37,9 @@ export default function SideNav({ className = "" }: { className?: string }) {
           <div
             key={index}
             className={makeStyle(item.level, item.active)}
-            onClick={() => onClick(item.href)}
+            {
+            ...item.active ? null : { onClick: () => onClick(item.href) }
+            }
           >
             {item.children}
           </div>
@@ -48,10 +50,10 @@ export default function SideNav({ className = "" }: { className?: string }) {
 }
 
 function makeStyle(level: number, active: boolean): string {
-  const fixedStyle = "py-1 cursor-pointer";
+  const fixedStyle = "py-1";
   const activeStyle = active
-    ? "text-secondary-foreground text-bold"
-    : "text-secondary-foreground/50 hover:text-secondary-foreground";
+    ? "cursor-default text-secondary-foreground text-bold"
+    : "cursor-pointer text-secondary-foreground/50 hover:text-secondary-foreground";
   const baseStyle = (() => {
     switch (level) {
       case 0: return "pl-2 text-lg";

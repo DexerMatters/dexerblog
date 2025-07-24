@@ -16,8 +16,8 @@ const navItems = [
 export default function TopNav() {
   const router = useRouter();
   const currentPath = usePathname().split('/').slice(0, 2).join('/');
-  const style_active = "text-foreground";
-  const style_inactive = "text-white hover:bg-primary-lighter transition";
+  const style_active = "text-white";
+  const style_inactive = "hover:bg-primary-lighter transition";
   const [active, setActive] = useState(navItems[0]);
   const setHeaderVisible = useContext(HeaderContext);
 
@@ -44,7 +44,7 @@ export default function TopNav() {
             active.href == href ? (
               <motion.div
                 id="active-link"
-                className="absolute bg-background z-10 left-0 top-0 inset-0"
+                className="absolute bg-top-nav z-10 left-0 top-0 inset-0"
                 layoutId="active-link" />
             ) : null
           }

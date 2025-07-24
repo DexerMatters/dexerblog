@@ -9,6 +9,8 @@
   --color-primary-lighter: #456789;
   --color-secondary: #f1f1e6;
   --color-secondary-foreground: var(--color-foreground);
+  --color-accent: #dba11c;
+  --color-top-nav: var(--color-accent);
   --animate-slide: slide 0.8s ease-in-out;
 
   @keyframes slide {

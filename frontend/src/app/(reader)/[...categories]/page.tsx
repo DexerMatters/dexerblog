@@ -6,8 +6,8 @@ import { useContext, useEffect, useRef, useState } from "react";
 import "./page.css";
 import "./highlight.css";
 import "./katex.min.css";
-import { HeaderContext } from "../menu";
-import { SidebarContext } from "./layout";
+import { HeaderContext } from "../../menu";
+import { SidebarContext } from "../layout";
 
 export default function BlogPage() {
   const path = usePathname().split('/').pop() || '';
