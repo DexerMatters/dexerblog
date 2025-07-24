@@ -49,7 +49,9 @@ export default function SideNav({ className = "" }: { className?: string }) {
 
 function makeStyle(level: number, active: boolean): string {
   const fixedStyle = "py-1 cursor-pointer";
-  const activeStyle = active ? "text-white text-bold" : "text-white/50 hover:text-white";
+  const activeStyle = active
+    ? "text-secondary-foreground text-bold"
+    : "text-secondary-foreground/50 hover:text-secondary-foreground";
   const baseStyle = (() => {
     switch (level) {
       case 0: return "pl-2 text-lg";

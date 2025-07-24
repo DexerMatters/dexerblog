@@ -34,10 +34,10 @@ export default function TopNav() {
   }, [currentPath]);
 
   return (
-    <ul className="flex flex-row items-center text-lg">
+    <ul className="bg-primary flex flex-row items-center text-lg">
       {navItems.map(({ href, label }) => (
-        <motion.li key={href} onClick={() => onClick(href, label)} className={
-          `relative p-1 text-center w-64
+        <motion.li id={`nav-item-${label}`} key={href} onClick={() => onClick(href, label)} className={
+          `relative p-1 text-center lg:w-64 w-1/6
           ${active.href == href ? style_active : style_inactive}`
         }>
           {
@@ -48,7 +48,7 @@ export default function TopNav() {
                 layoutId="active-link" />
             ) : null
           }
-          <div className="relative z-20 cursor-pointer">
+          <div className="relative z-20 lg:w-64 w-full cursor-pointer">
             {label}
           </div>
         </motion.li>
