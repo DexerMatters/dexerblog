@@ -1,0 +1,22 @@
+.about-page h1 {
+  color: var(--color-background);
+  font-size: 3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.about-page p {
+  color: var(--color-background);
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.about-page a {
+  color: var(--color-blue-400);
+}
+
+.about-page a:hover {
+  color: var(--color-blue-200);
+  text-decoration: underline;
+}

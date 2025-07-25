@@ -28,6 +28,7 @@ export default function SideBarLayout({
       overflow-y-scroll"
         animate={{ width: sidebarVisible ? 'calc(var(--spacing) * 64)' : '0px' }}>
         <SideNav
+          handler={setSidebarVisible}
           className="ml-auto mr-0 flex flex-col items-stretch w-64 p-4"
         />
       </motion.div>

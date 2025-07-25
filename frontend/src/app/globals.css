@@ -11,15 +11,17 @@
   --color-secondary-foreground: var(--color-foreground);
   --color-accent: #dba11c;
   --color-top-nav: var(--color-accent);
-  --animate-slide: slide 0.8s ease-in-out;
+  --animate-slide: slide 0.2s ease-in-out;
 
   @keyframes slide {
     0% {
-      transform: translateX(-100%);
+      opacity: 0;
+      transform: translateX(-2%) translateY(2%);
     }
 
     100% {
-      transform: translateX(0%);
+      opacity: 1;
+      transform: translateX(0%) translateY(0%);
     }
   }
 }

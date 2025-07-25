@@ -1,8 +1,8 @@
-'use client';;
+'use client'
 import { HeaderContext } from "@/app/menu";
 import { api, Category } from "@/utils/interfaces";
 import { usePathname, useRouter } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
 
 interface ItemProps {
   href: string;
@@ -14,18 +14,24 @@ interface ItemProps {
 
 
 
-export default function SideNav({ className = "" }: { className?: string }) {
+export default function SideNav({ className = "", handler }
+  : { className?: string, handler: Dispatch<SetStateAction<boolean>> }) {
   const path = usePathname().slice(1).split('/');
   const router = useRouter();
   const setHeaderVisible = useContext(HeaderContext);
   const [items, setItems] = useState<ItemProps[]>([]);
+
   useEffect(() => {
     fetchCategories(true, path[0], `/${path[0]}`, 0, path).then((data) => {
       setItems(data.slice(1));
     });
-  }, [])
+  }, [path.join('/')])
 
   const onClick = (href: string) => {
+    // If small screen
+    if (window.innerWidth < 1024) {
+      handler(false);
+    }
     router.push(href);
     setHeaderVisible(true);
   }
@@ -37,9 +43,7 @@ export default function SideNav({ className = "" }: { className?: string }) {
           <div
             key={index}
             className={makeStyle(item.level, item.active)}
-            {
-            ...item.active ? null : { onClick: () => onClick(item.href) }
-            }
+            onClick={() => onClick(item.href)}
           >
             {item.children}
           </div>
@@ -50,10 +54,10 @@ export default function SideNav({ className = "" }: { className?: string }) {
 }
 
 function makeStyle(level: number, active: boolean): string {
-  const fixedStyle = "py-1";
+  const fixedStyle = "py-1 cursor-pointer transition-colors";
   const activeStyle = active
-    ? "cursor-default text-secondary-foreground text-bold"
-    : "cursor-pointer text-secondary-foreground/50 hover:text-secondary-foreground";
+    ? "text-secondary-foreground text-bold"
+    : "text-secondary-foreground/50 hover:text-secondary-foreground";
   const baseStyle = (() => {
     switch (level) {
       case 0: return "pl-2 text-lg";
@@ -110,5 +114,4 @@ async function fetchCategories(willExtend: boolean, current: string, href: strin
 
   return [self, ...items, ...docItems];
 }
-
 

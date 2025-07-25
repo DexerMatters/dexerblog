@@ -22,7 +22,9 @@ export default function TopNav() {
   const setHeaderVisible = useContext(HeaderContext);
 
   const onClick = (href: string, label: string) => {
-    setActive({ href, label });
+    if (active.href !== href) {
+      setActive({ href, label });
+    };
     router.push(href);
     setHeaderVisible(true);
   };

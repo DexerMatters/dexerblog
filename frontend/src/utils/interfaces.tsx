@@ -17,3 +17,7 @@ export interface Category {
 export function api(s: string) {
   return `http://localhost:3001/${s}`;
 }
+export function dbg<T>(value: T): T {
+  console.log("Debug:", value);
+  return value;
+}
