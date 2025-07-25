@@ -103,6 +103,15 @@ app.get('/documents', async (req, res) => {
 });
 
 app.head('/sync-repo', async (req, res) => {
+  if (process.env.NODE_ENV === 'development') {
+    db.syncGithubRepo().catch((err) => {
+      error('Error syncing GitHub repo:', err);
+      res.status(500).json({ error: 'Failed to sync GitHub repo' });
+    }).then(() => {
+      db.updateCategories();
+    });
+    return res.status(200).json({ message: 'Syncing GitHub repo in the background' });
+  }
   const token = req.header('authorization')?.split('Bearer ')[1];
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized' });

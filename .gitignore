@@ -26,6 +26,7 @@
 .DS_Store
 *.pem
 .vscode
+/backend/repo
 
 # debug
 npm-debug.log*
