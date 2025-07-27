@@ -93,3 +93,9 @@ docker-compose up
 - Docker & Docker Compose
 - Nginx (reverse proxy)
 - pnpm workspaces
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+```
