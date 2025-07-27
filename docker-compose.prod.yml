@@ -1,0 +1,74 @@
+services:
+  frontend:
+    image: dexermatters/dexerblog-frontend:latest
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    environment:
+      - NODE_ENV=production
+
+  backend:
+    image: dexermatters/dexerblog-backend:latest
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=dexerblog
+      - DB_USER=dexer
+      - DB_PASSWORD=root
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  db:
+    image: postgres:alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: dexer
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: dexerblog
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U dexer -d dexerblog" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      # Uncomment below if you have SSL certificates
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

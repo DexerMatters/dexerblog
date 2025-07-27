@@ -1,6 +1,6 @@
 'use client'
 
-import TopNav from "@/components/top_nav";
+import TopNav from "@/components/top-nav";
 import Image from "next/image";
 import { createContext, Dispatch, SetStateAction, useState } from "react";
 import { motion } from "motion/react";

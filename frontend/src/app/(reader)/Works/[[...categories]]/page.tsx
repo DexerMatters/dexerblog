@@ -1,5 +1,5 @@
 'use client'
 
-import ReaderTemplate from "../../reader_template"
+import ReaderTemplate from "../../reader-template"
 
 export default () => <ReaderTemplate />

@@ -1,4 +1,4 @@
-import AnimatedBlocks from "@/components/animated_blocks";
+import AnimatedBlocks from "@/components/animated-blocks";
 
 export default function Home() {
   return (

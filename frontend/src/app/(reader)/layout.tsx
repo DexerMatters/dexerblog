@@ -1,12 +1,9 @@
 'use client';
 
-import SideNav from "@/components/side_nav";
-import { Dispatch, SetStateAction, useState } from "react";
-import { createContext } from 'react';
+import SideNav from "@/components/side-nav";
+import { useState } from "react";
 import { motion } from "motion/react";
-
-
-export const SidebarContext = createContext<Dispatch<SetStateAction<boolean>>>((_b) => { });
+import { SidebarContext } from "@/contexts/sidebar-context";
 
 export default function SideBarLayout({
   children,

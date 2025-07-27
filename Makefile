@@ -26,14 +26,14 @@ dev:
 	docker-compose -f docker-compose.dev.yml up
 
 dev-build:
-	docker-compose -f docker-compose.dev.yml up --build
+	docker-compose -f docker-compose.dev.yml up --build --remove-orphans 
 
 # Production commands  
 prod:
 	docker-compose up
 
 prod-build:
-	docker-compose up --build
+	docker-compose up --build --remove-orphans 
 
 # Management commands
 logs:

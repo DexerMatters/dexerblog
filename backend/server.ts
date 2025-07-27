@@ -38,6 +38,10 @@ app.get('/', (_req, res) => {
   res.json({ status: 'OK', message: 'Backend server is running' });
 });
 
+app.get('/cache-version', (_req, res) => {
+  res.json({ version: Date.now().toString() });
+});
+
 app.get('/content/{*path}', async (req, res) => {
   let params = (req.params as { path: String[] }).path;
   let path = "./repo/" + decodeURI(params.join("/"));
@@ -95,7 +99,6 @@ app.get('/subcategories', async (req, res) => {
 
 app.get('/documents', async (req, res) => {
   const params = req.query as { title?: string, category_id?: string };
-  console.log(decodeURIComponent(params.title || ''));
   const documents = await db.queryDocuments(
     params.title,
     params.category_id ? parseInt(params.category_id) : undefined);
@@ -108,9 +111,17 @@ app.head('/sync-repo', async (req, res) => {
       error('Error syncing GitHub repo:', err);
       res.status(500).json({ error: 'Failed to sync GitHub repo' });
     }).then(() => {
-      db.updateCategories();
+      db.syncLinks().then(() => {
+        db.updateCategories();
+      }).catch((err) => {
+        error('Error syncing links:', err);
+        res.status(500).json({ error: 'Failed to sync links' });
+      });
     });
-    return res.status(200).json({ message: 'Syncing GitHub repo in the background' });
+    return res.status(200).json({
+      message: 'Syncing GitHub repo in the background',
+      cacheVersion: Date.now().toString()
+    });
   }
   const token = req.header('authorization')?.split('Bearer ')[1];
   if (!token) {
@@ -130,8 +141,50 @@ app.head('/sync-repo', async (req, res) => {
     }).then(() => {
       db.updateCategories();
     });
-    res.status(200).json({ message: 'Syncing GitHub repo in the background' });
+    res.status(200).json({
+      message: 'Syncing GitHub repo in the background',
+      cacheVersion: Date.now().toString()
+    });
   })
+});
+
+app.post('/webhook/invalidate-cache', (req, res) => {
+  const { event, repository } = req.body;
+
+  if (event === 'push' && repository?.name === 'dexerblog-docs') {
+    log('GitHub webhook received: invalidating cache');
+
+    db.syncGithubRepo().catch((err) => {
+      error('Error syncing GitHub repo:', err);
+    }).then(() => {
+      db.syncLinks().then(() => {
+        db.updateCategories();
+      }).catch((err) => {
+        error('Error syncing links:', err);
+      });
+    });
+
+    res.status(200).json({
+      message: 'Cache invalidation triggered',
+      cacheVersion: Date.now().toString()
+    });
+  } else {
+    res.status(200).json({ message: 'Event ignored' });
+  }
+});
+
+app.get('/navigation/:category', async (req, res) => {
+  const categoryTitle = req.params.category;
+  try {
+    const navigationData = await db.getNavigationData(categoryTitle);
+    if (!navigationData) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    res.json(navigationData);
+  } catch (error) {
+    log(`Error fetching navigation data: ${error}`);
+    res.status(500).json({ error: 'Failed to fetch navigation data' });
+  }
 });
 
 // Start server

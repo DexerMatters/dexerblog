@@ -48,6 +48,12 @@ services:
       - app-network
     environment:
       - NODE_ENV=development
+      # Clear proxy settings for runtime to allow direct access to GitHub
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     # Add restart policy for development stability
     restart: unless-stopped
 

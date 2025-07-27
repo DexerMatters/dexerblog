@@ -47,6 +47,12 @@
   margin-bottom: 1.5rem;
 }
 
+.content ol {
+  list-style-type: decimal;
+  padding-left: 2rem;
+  margin-bottom: 1.5rem;
+}
+
 .content ul li {
   margin-bottom: 0.5rem;
 }
@@ -73,6 +79,7 @@
 
 .content a {
   color: var(--color-blue-600);
+  display: inline-block;
   text-decoration: none;
 }
 

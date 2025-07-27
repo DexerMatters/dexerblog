@@ -1,13 +1,14 @@
 'use client'
 
-import { api, Category, Document } from "@/utils/interfaces";
+import { Category, Document, removeSuffix } from "@/utils/interfaces";
+import { cachedFetch, cachedFetchText } from "@/utils/cache";
 import { usePathname } from "next/navigation";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState, useCallback } from "react";
 import "./page.css";
 import "./highlight.css";
 import "./katex.min.css";
 import { HeaderContext } from "../menu";
-import { SidebarContext } from "./layout";
+import { SidebarContext } from "@/contexts/sidebar-context";
 import Card from "@/components/card";
 
 interface ItemProps {
@@ -17,13 +18,6 @@ interface ItemProps {
   type: 'category' | 'document';
 }
 
-interface Content {
-  description: string;
-  subcategories: Content[];
-  documents: Document[];
-}
-
-
 
 export default function ReaderTemplate() {
   const fullPath = usePathname();
@@ -32,27 +26,38 @@ export default function ReaderTemplate() {
   const setHeaderVisible = useContext(HeaderContext);
   const setSidebarVisible = useContext(SidebarContext);
 
-  useEffect(() => {
-    const fetchContent = async () => {
-      let path = fullPath.split('/').pop() || "";
-      if (path.endsWith(".md")) {
-        const content_url = await fetch(api(`documents?title=${path}`))
-          .then(res => res.json() as Promise<Document[]>)
-          .then(data => data[0].content_url);
-        const response = await fetch(api(`${content_url}`));
-        const content = await response.text();
-        setContent(content);
-      }
-      else {
-        const description = await fetch(api(`categories?title=${encodeURIComponent(path)}`))
-          .then(res => res.json() as Promise<Category>)
-          .then(data => data.description);
-        setContent(description || `<p>No description available for ${decodeURIComponent(path)}</p>`);
-        setItems(await fetchItems(fullPath, path));
-      }
+  const fetchContent = useCallback(async () => {
+    let path = fullPath.split('/').pop() || "";
+    if (path.endsWith(".md")) {
+      const documents = await cachedFetch<Document[]>(`documents?title=${encodeURIComponent(path)}`);
+      const content_url = documents[0].content_url;
+      const content = await cachedFetchText(decodeURIComponent(content_url));
+      setContent(content);
     }
+    else {
+      const category = await cachedFetch<Category>(`categories?title=${encodeURIComponent(path)}`);
+      const description = category.description || " ";
+      setContent(description);
+      setItems(await fetchItems(fullPath, path));
+    }
+  }, [fullPath]);
+
+  useEffect(() => {
     fetchContent();
-  }, [])
+  }, [fetchContent]);
+
+  useEffect(() => {
+    const handleCacheInvalidation = () => {
+      fetchContent();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('cache-invalidated', handleCacheInvalidation);
+      return () => {
+        window.removeEventListener('cache-invalidated', handleCacheInvalidation);
+      };
+    }
+  }, [fetchContent])
 
   const scrollFrame = useRef<[number, number]>([0, 0]);
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -107,7 +112,7 @@ export default function ReaderTemplate() {
               {items.map((item, index) => (
                 <Card
                   key={index}
-                  title={item.title}
+                  title={removeSuffix(item.title, ".link")}
                   description={item.description}
                   href={item.href}
                   type={item.type} />
@@ -120,16 +125,14 @@ export default function ReaderTemplate() {
 }
 
 async function fetchItems(root: string, title: string): Promise<ItemProps[]> {
-  const cat_id_res = await fetch(api(`categories?title=${encodeURIComponent(title)}`))
-  const cat_id: number = await cat_id_res.json()
-    .then(data => data.id);
-  const subcategories_res = await fetch(api(`subcategories?title=${encodeURIComponent(title)}`))
-  const subcategories: Category[] = await subcategories_res.json()
-  const documents_res = await fetch(api(`documents?category_id=${cat_id}`))
-  const documents: Document[] = await documents_res.json();
+  const category = await cachedFetch<Category>(`categories?title=${encodeURIComponent(title)}`);
+  const cat_id = category.id;
+  const subcategories = await cachedFetch<Category[]>(`subcategories?title=${encodeURIComponent(title)}`);
+  const documents = await cachedFetch<Document[]>(`documents?category_id=${cat_id}`);
+
   const subcategoryItems: ItemProps[] = subcategories.map(subcat => ({
     title: subcat.title,
-    description: subcat.description || "No description available",
+    description: subcat.description,
     href: `${root}/${encodeURIComponent(subcat.title)}`,
     type: 'category' as const,
   }));

@@ -15,9 +15,24 @@ export interface Category {
 }
 
 export function api(s: string) {
-  return `http://localhost:3001/${s}`;
+  if (process.env.NODE_ENV === "development") {
+    return `http://localhost:3001/${s}`;
+  }
+  return `https://api.dexermatte.rs/${s}`;
 }
+
 export function dbg<T>(value: T): T {
   console.log("Debug:", value);
   return value;
+}
+
+export function removeSuffix(str: string, suffix: string): string {
+  if (str.endsWith(suffix)) {
+    return str.slice(0, -suffix.length);
+  }
+  return str;
+}
+
+export function createCacheKey(...parts: string[]): string {
+  return parts.map(part => encodeURIComponent(part)).join('_');
 }

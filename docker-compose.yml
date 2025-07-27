@@ -1,5 +1,6 @@
 services:
   frontend:
+    image: dexermatters/dexerblog-frontend:${FRONTEND_VERSION}
     build:
       context: .
       dockerfile: Dockerfile.frontend
@@ -38,6 +39,7 @@ services:
       - WATCHPACK_POLLING=true
 
   backend:
+    image: dexermatters/dexerblog-backend:1.2
     build:
       context: .
       dockerfile: Dockerfile.backend
@@ -57,6 +59,12 @@ services:
       - DB_NAME=dexerblog
       - DB_USER=dexer
       - DB_PASSWORD=root
+      # Clear proxy settings for runtime to allow direct access to GitHub
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   backend-dev:
     build:
@@ -84,6 +92,12 @@ services:
       - DB_NAME=dexerblog
       - DB_USER=dexer
       - DB_PASSWORD=root
+      # Clear proxy settings for runtime to allow direct access to GitHub
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   db:
     image: postgres:alpine

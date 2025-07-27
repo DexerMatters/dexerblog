@@ -1,4 +1,4 @@
-import AnimatedBlocks from "@/components/animated_blocks";
+import AnimatedBlocks from "@/components/animated-blocks";
 import "./page.css";
 
 export default function AboutPage() {

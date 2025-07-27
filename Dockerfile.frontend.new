@@ -59,4 +59,4 @@ ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
 
 # Start the application
-CMD ["node", "frontend/server.js"]
+CMD ["node", "server.js"]
