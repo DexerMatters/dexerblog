@@ -97,6 +97,7 @@ export async function updateCategories() {
   await clearDocuments();
   await clearCategories();
   let stack = readAllSubdirectories("./repo");
+  console.log(`Stack: ${JSON.stringify(stack)}`);
   let id_stack: (number | null)[] = stack.map(() => null);
   while (stack.length > 0) {
     const dir = stack.pop();
@@ -123,9 +124,16 @@ export async function updateCategories() {
       if (title === "description.md" || title === ".link") {
         continue; // Skip description and link files
       }
+
+      // Skip files that are not in any category (parent_id is null)
+      if (parent_id === null) {
+        log(`Skipping root-level file: ${title}`);
+        continue;
+      }
+
       title = title.substring(0, title.lastIndexOf(".")) || "Untitled";
       await insertDocument(
-        parent_id || 0,
+        parent_id,
         title || "Untitled",
         encodeURIComponent(dir.replace("repo", "content")),
         new Date(stat.birthtime),
@@ -244,6 +252,7 @@ async function insertDocument(
 function readAllSubdirectories(baseDir: string): string[] {
   const subdirs = fs.readdirSync(baseDir)
     .filter((name) => !name.startsWith("."))
+    .filter((name) => name !== "LICENSE" && name !== "README.md")
     .map((name) => path.join(baseDir, name))
   return subdirs;
 }

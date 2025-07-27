@@ -4,7 +4,7 @@ import * as render from './render.js';
 import { log } from './utils.js';
 import { error } from 'console';
 import fs from 'fs';
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 
 const app = express();

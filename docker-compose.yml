@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: dexermatters/dexerblog-frontend:${FRONTEND_VERSION}
+    image: dexermatters/dexerblog-frontend:1.9
     build:
       context: .
       dockerfile: Dockerfile.frontend
@@ -39,7 +39,7 @@ services:
       - WATCHPACK_POLLING=true
 
   backend:
-    image: dexermatters/dexerblog-backend:1.2
+    image: dexermatters/dexerblog-backend:1.5
     build:
       context: .
       dockerfile: Dockerfile.backend

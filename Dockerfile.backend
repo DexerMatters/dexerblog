@@ -14,8 +14,6 @@ WORKDIR /app
 # Copy package.json and lock file
 COPY backend/tsconfig.json backend/package.json backend/pnpm-lock.yaml* ./
 # Install pnpm and dependencies
-ENV HTTP_PROXY=$HTTP_PROXY
-ENV HTTPS_PROXY=$HTTPS_PROXY
 RUN npm install -g pnpm --verbose
 RUN pnpm install --verbose
 

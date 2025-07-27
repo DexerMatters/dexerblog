@@ -44,8 +44,8 @@ WORKDIR /app
 
 # Copy the standalone output from builder (this includes all dependencies)
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/frontend/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./frontend/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/public ./frontend/public
 
 # Switch to non-root user
 USER nextjs
@@ -58,5 +58,5 @@ ENV NODE_ENV=production
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
 
-# Start the application
+# Start the application from the frontend directory
 CMD ["node", "frontend/server.js"]
